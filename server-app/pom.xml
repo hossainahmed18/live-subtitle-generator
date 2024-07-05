@@ -7,11 +7,30 @@
   <groupId>com.playground.streaming</groupId>
   <artifactId>live-subtitle-generator</artifactId>
   <version>1.0-SNAPSHOT</version>
+
   <dependencies>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>transcribestreaming</artifactId>
       <version>2.7.27</version>
+    </dependency>
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>transcribestreaming</artifactId>
+        <version>2.7.27</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-websocket</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.reactivestreams</groupId>
+        <artifactId>reactive-streams</artifactId>
+        <version>1.0.2</version>
     </dependency>
     <dependency>
       <groupId>org.reactivestreams</groupId>
@@ -22,11 +41,6 @@
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
       <version>15.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.openjfx</groupId>
-      <artifactId>javafx-controls</artifactId>
-      <version>15.0.1</version> 
     </dependency>
     <dependency>
       <groupId>org.openjfx</groupId>
@@ -41,11 +55,11 @@
   </properties>
 
   <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-        </repository>
-    </repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+  </repositories>
 
   <build>
     <plugins>
