@@ -17,14 +17,13 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class TranscribeStreamingClientWrapper {
@@ -37,49 +36,75 @@ public class TranscribeStreamingClientWrapper {
     }
 
     public static TranscribeStreamingAsyncClient getClient() {
-        Region region = getRegion();
-        String endpoint = "https://transcribestreaming." + region.toString().toLowerCase().replace('_','-') + ".amazonaws.com";
-        try {
-            return TranscribeStreamingAsyncClient.builder()
-                    .credentialsProvider(getCredentials())
-                    .endpointOverride(new URI(endpoint))
-                    .region(region)
-                    .build();
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URI syntax for endpoint: " + endpoint);
-        }
+        return TranscribeStreamingAsyncClient.builder()
+            .credentialsProvider(getCredentials())
+            .region(getRegion())
+            .build();
 
     }
 
     private static Region getRegion() {
         Region region;
-        
         region = Region.EU_CENTRAL_1;
-        
         return region;
     }
 
-    public CompletableFuture<Void> startTranscription(StreamTranscriptionBehavior responseHandler, File inputFile) {
+    public CompletableFuture<Void> startTranscription(StreamTranscriptionBehavior responseHandler, String inputFile) {
         if (requestStream != null) {
             throw new IllegalStateException("Stream is already open");
         }
         try {
-            int sampleRate = 16_000; //default
-            if (inputFile != null) {
-                sampleRate = (int) AudioSystem.getAudioInputStream(inputFile).getFormat().getSampleRate();
-                requestStream = new AudioStreamPublisher(getStreamFromFile(inputFile));
+            int sampleRate = 16_000;
+            if (inputFile != null && !inputFile.trim().isEmpty()) {
+                requestStream = new AudioStreamPublisher(getStreamFromHLS(inputFile));
             } else {
                 requestStream = new AudioStreamPublisher(getStreamFromMic());
             }
             return client.startStreamTranscription(
-                
                     getRequest(sampleRate),
                     requestStream,
                     responseHandler);
-        } catch (LineUnavailableException | UnsupportedAudioFileException | IOException ex) {
+        } catch (LineUnavailableException ex) {
             CompletableFuture<Void> failedFuture = new CompletableFuture<>();
             failedFuture.completeExceptionally(ex);
             return failedFuture;
+        }
+    }
+
+    public static InputStream getStreamFromHLS(String hlsUrl) {
+        try {
+            String classPath;
+            classPath = TranscribeStreamingApp.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+            File classFile = new File(classPath);
+            String classDir = classFile.getParent();
+
+            String ffmpegPath = classDir + File.separator + "ffmpeg" + File.separator + "ffmpeg";
+
+            File ffmpegFile = new File(ffmpegPath);
+            if (!ffmpegFile.exists()) {
+                throw new FileNotFoundException("ffmpeg binary not found at " + ffmpegPath);
+            }
+            if (!ffmpegFile.canExecute()) {
+                throw new SecurityException("ffmpeg binary is not executable");
+            }
+
+            List<String> command = Arrays.asList(
+                ffmpegPath,
+                "-re", 
+                "-i", hlsUrl,
+                "-f", "s16le",
+                "-ar", "16000",
+                "-ac", "1",
+                "-acodec", "pcm_s16le",
+                "-");
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
+            Process process = processBuilder.start();
+            return process.getInputStream();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to start ffmpeg process", e);
+        }
+        catch (URISyntaxException e) {
+            throw new RuntimeException("Failed to start ffmpeg process", e);
         }
     }
 
@@ -127,15 +152,6 @@ public class TranscribeStreamingClientWrapper {
         line.start();
 
         return new AudioInputStream(line);
-    }
-
-  
-    private static InputStream getStreamFromFile(File inputFile) {
-        try {
-            return new FileInputStream(inputFile);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private StartStreamTranscriptionRequest getRequest(Integer mediaSampleRateHertz) {
