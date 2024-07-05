@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutionException;
 public class WindowController {
 
     private TranscribeStreamingClientWrapper client;
-    private TranscribeStreamingSynchronousClient synchronousClient;
     private TextArea outputTextArea;
     private Button startStopMicButton;
     private Button fileStreamButton;
@@ -39,7 +38,6 @@ public class WindowController {
 
     public WindowController(Stage primaryStage) {
         client = new TranscribeStreamingClientWrapper();
-        synchronousClient = new TranscribeStreamingSynchronousClient(TranscribeStreamingClientWrapper.getClient());
         this.primaryStage = primaryStage;
         initializeWindow(primaryStage);
     }
@@ -51,24 +49,7 @@ public class WindowController {
         client.close();
     }
 
-    private void startFileTranscriptionRequest(File inputFile) {
-        if (inProgressStreamingRequest == null) {
-            finalTextArea.clear();
-            finalTranscript = "";
-            startStopMicButton.setText("Streaming...");
-            startStopMicButton.setDisable(true);
-            outputTextArea.clear();
-            finalTextArea.clear();
-            saveButton.setDisable(true);
-            finalTranscript = synchronousClient.transcribeFile(inputFile);
-            finalTextArea.setText(finalTranscript);
-            startStopMicButton.setDisable(false);
-            saveButton.setDisable(false);
-            startStopMicButton.setText("Start Microphone Transcription");
-        }
-    }
-
-    private void startTranscriptionRequest(File inputFile) {
+    private void startTranscriptionRequest(String inputFile) {
         if (inProgressStreamingRequest == null) {
             finalTextArea.clear();
             finalTranscript = "";
@@ -98,14 +79,7 @@ public class WindowController {
 
         fileStreamButton = new Button();
         fileStreamButton.setText("Stream From Audio File"); 
-        fileStreamButton.setOnAction(__ -> {
-            FileChooser inputFileChooser = new FileChooser();
-            inputFileChooser.setTitle("Stream Audio File");
-            File inputFile = inputFileChooser.showOpenDialog(primaryStage);
-            if (inputFile != null) {
-                startFileTranscriptionRequest(inputFile);
-            }
-        });
+        fileStreamButton.setOnAction(__ -> startTranscriptionRequest("https://vimond.video-output.eu-north-1-dev.vmnd.tv/fbd642b6-8e5d-4e2b-8f07-efe3ee98ce26/hls/sample_news_976149.m3u8"));
         grid.add(fileStreamButton, 1, 0, 1, 1);
 
         Text inProgressText = new Text("In Progress Transcriptions:");
