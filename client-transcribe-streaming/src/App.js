@@ -4,7 +4,7 @@ import VideoPlayer from './VideoPlayer';
 
 const App = () => {
     const [transcription, setTranscription] = useState('');
-    const [ setIsTranscribing] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
     const socketUrl = 'ws://localhost:8080/audio-stream';
     let { sendMessage, lastMessage, readyState, getWebSocket, setUrl } = useWebSocket(socketUrl);
     const SAMPLE_RATE = 44100;
