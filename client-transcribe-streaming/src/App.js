@@ -37,7 +37,7 @@ const App = () => {
         startTranscription(playBackUrl);
         setTimeout(() => {
             setPlayersPlayBackUrl(playBackUrl);
-        }, 2000);
+        }, 10000);
     };
       
     const startTranscription = (playBackUrl) => {

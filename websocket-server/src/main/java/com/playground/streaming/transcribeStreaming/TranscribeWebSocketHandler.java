@@ -143,13 +143,20 @@ public class TranscribeWebSocketHandler extends BinaryWebSocketHandler {
                 .onResponse(r -> {
                     try {
                         System.out.println("Received Initial response");
-                        currentSession.sendMessage(new TextMessage("##Transcript##"+"**backend initialized"+"##partial##"+"true"));
+                        currentSession.sendMessage(new TextMessage("##Transcript##"+"**web-socket server received initialization request "+"##partial##"+"true"));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 })
                 .onError(e -> System.err.println("Error: " + e.getMessage()))
-                .onComplete(() -> System.out.println("Transcription completed"))
+                .onComplete(() -> {
+                    try {
+                        System.out.println("Received Initial response");
+                        currentSession.sendMessage(new TextMessage("##Transcript##"+" "+"##partial##"+"true"));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .subscriber(event -> {
                     List<Result> results = ((TranscriptEvent) event).transcript().results();
                     if (results.size() > 0) {
